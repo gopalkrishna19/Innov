@@ -225,16 +225,25 @@ if input_tab:
                 })
 
     elif input_method == "Upload CSV":
-        uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+        uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx", "csv"])
         if uploaded_file:
-            df_uploaded = pd.read_csv(uploaded_file)
+            df_uploaded = pd.read_excel(uploaded_file)
             st.write("📄 Uploaded Data Preview:")
             st.dataframe(df_uploaded)
-
-            expected_cols = ['user_id', 'timestamp', 'device_type', 'os_browser', 'screen_resolution', 'ip', 'lat', 'lon', 'city', 'login_method', 'channel']
+            expected_cols = ['user_id', 'timestamp', 'device_type', 'os_browser', 'screen_resolution', 'ip', 'lat',
+                             'lon', 'city', 'login_method', 'channel']
             missing_cols = set(expected_cols) - set(df_uploaded.columns)
-
             if missing_cols:
                 st.error(f"Missing columns in uploaded file: {missing_cols}")
             else:
                 st.success("✅ File structure is valid.")
+                try:
+                    # Load existing data
+                    existing_df = pd.read_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx")
+                    # Append new data
+                    combined_df = pd.concat([existing_df, df_uploaded], ignore_index=True)
+                    # Save back to Excel
+                    combined_df.to_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx", index=False)
+                    st.success("📁 Data successfully appended to Excel file.")
+                except Exception as e:
+                    st.error(f"❌ Error saving to Excel: {e}")
