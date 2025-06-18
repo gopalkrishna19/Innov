@@ -100,15 +100,11 @@ with login_tab:
     user_df['anomaly_reason'] = ""
     user_df['anomaly_score'] = 0
 
-    # Apply strict rules with weights
-    user_df.loc[user_df['device_type'] != mode_device, ['anomaly_reason', 'anomaly_score']] = ["Unusual Device", 0.55]
-    user_df.loc[user_df['login_method'] != mode_method, ['anomaly_reason', 'anomaly_score']] += ["; Unusual Method",
-                                                                                                 0.05]
-    user_df.loc[user_df['channel'] != mode_channel, ['anomaly_reason', 'anomaly_score']] += ["; Unusual Channel", 0.05]
-    user_df.loc[abs(user_df['login_hour'] - mode_hour) > 3, ['anomaly_reason', 'anomaly_score']] += ["; Odd Login Hour",
-                                                                                                     0.05]
+    user_df.loc[user_df['device_type'] != mode_device, ['anomaly_reason', 'anomaly_score']] = ["Unusual Device", 0.25]
+    user_df.loc[user_df['login_method'] != mode_method, ['anomaly_reason', 'anomaly_score']] += ["; Unusual Method", 0.25]
+    user_df.loc[user_df['channel'] != mode_channel, ['anomaly_reason', 'anomaly_score']] += ["; Unusual Channel", 0.2]
+    user_df.loc[abs(user_df['login_hour'] - mode_hour) > 3, ['anomaly_reason', 'anomaly_score']] += ["; Odd Login Hour", 0.2]
 
-    # Geovelocity check
     for i in range(1, len(user_df)):
         prev = user_df.loc[i - 1]
         curr = user_df.loc[i]
@@ -120,10 +116,10 @@ with login_tab:
             speed = distance_km / time_diff_hr
             if speed > 500:
                 user_df.loc[i, 'anomaly_reason'] += "; High GeoVelocity"
-                user_df.loc[i, 'anomaly_score'] += 0.8
+                user_df.loc[i, 'anomaly_score'] += 0.3
 
     user_df['anomaly_score'] = user_df['anomaly_score'].clip(upper=1.0)
-    anomalies = user_df[user_df['anomaly_score'] > 0].copy()
+    anomalies = user_df[user_df['anomaly_score'] > 0.4].copy().reset_index(drop=True)
 
     def highlight_risk(row):
         if row['anomaly_score'] > 0.7:
@@ -133,10 +129,16 @@ with login_tab:
         else:
             return ['background-color: lightgreen'] * len(row)
 
-
     st.markdown("### ⚠️ Anomalies Detected (with Risk Levels)")
-    st.dataframe(anomalies[['timestamp', 'device_type', 'login_method', 'channel', 'login_hour', 'lat', 'lon',
-                            'anomaly_reason', 'anomaly_score']].style.apply(highlight_risk, axis=1))
+
+    selected_index = st.selectbox("Select an anomaly row to explain:", anomalies.index)
+    st.dataframe(anomalies[['timestamp', 'device_type', 'login_method', 'channel', 'login_hour', 'lat', 'lon', 'anomaly_reason', 'anomaly_score']].style.apply(highlight_risk, axis=1))
+
+    if selected_index is not None and selected_index in anomalies.index:
+        st.markdown("#### 🧾 Explanation for Selected Anomaly")
+        selected_row = anomalies.loc[selected_index]
+        for col in ['timestamp', 'device_type', 'login_method', 'channel', 'login_hour', 'lat', 'lon', 'anomaly_reason', 'anomaly_score']:
+            st.write(f"**{col}**: {selected_row[col]}")
 
     # Raw data toggle
     with st.expander("📄 Show Raw Login Data"):
