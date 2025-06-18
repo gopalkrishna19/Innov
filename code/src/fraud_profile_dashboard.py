@@ -184,3 +184,57 @@ with feature_tab:
     st.bar_chart(freq_df)
 
     st.dataframe(user_features)
+
+# --- DATA INPUT TAB --- #
+input_tab = st.sidebar.checkbox("➕ Add New Login Data")
+
+if input_tab:
+    st.title("📥 Add New Login Record")
+
+    input_method = st.radio("Choose input method", ["Manual Entry", "Upload CSV"])
+
+    if input_method == "Manual Entry":
+        with st.form("manual_entry_form"):
+            user_id = st.text_input("User ID")
+            timestamp = st.text_input("Timestamp (e.g. 2025-06-18 14:30:00)")
+            device_type = st.text_input("Device Type")
+            os_browser = st.text_input("OS/Browser")
+            screen_resolution = st.text_input("Screen Resolution")
+            ip = st.text_input("IP Address")
+            lat = st.number_input("Latitude", format="%.6f")
+            lon = st.number_input("Longitude", format="%.6f")
+            city = st.text_input("City")
+            login_method = st.text_input("Login Method")
+            channel = st.text_input("Channel")
+
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                st.success("✅ Data Submitted")
+                st.json({
+                    "user_id": user_id,
+                    "timestamp": timestamp,
+                    "device_type": device_type,
+                    "os_browser": os_browser,
+                    "screen_resolution": screen_resolution,
+                    "ip": ip,
+                    "lat": lat,
+                    "lon": lon,
+                    "city": city,
+                    "login_method": login_method,
+                    "channel": channel
+                })
+
+    elif input_method == "Upload CSV":
+        uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+        if uploaded_file:
+            df_uploaded = pd.read_csv(uploaded_file)
+            st.write("📄 Uploaded Data Preview:")
+            st.dataframe(df_uploaded)
+
+            expected_cols = ['user_id', 'timestamp', 'device_type', 'os_browser', 'screen_resolution', 'ip', 'lat', 'lon', 'city', 'login_method', 'channel']
+            missing_cols = set(expected_cols) - set(df_uploaded.columns)
+
+            if missing_cols:
+                st.error(f"Missing columns in uploaded file: {missing_cols}")
+            else:
+                st.success("✅ File structure is valid.")
