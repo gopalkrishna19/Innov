@@ -185,65 +185,35 @@ with feature_tab:
 
     st.dataframe(user_features)
 
-# --- DATA INPUT TAB --- #
-input_tab = st.sidebar.checkbox("➕ Add New Login Data")
+# --- SYNC BUTTON --- #
+st.markdown("---")
+st.markdown("### 🔄 Sync New Login Data")
 
-if input_tab:
-    st.title("📥 Add New Login Record")
+sync_button = st.button("📥 Sync Now", type="primary")
 
-    input_method = st.radio("Choose input method", ["Manual Entry", "Upload CSV"])
+if sync_button:
+    try:
+        new_data = pd.read_excel("code/src/synthetic_logs/AData.xlsx")
+        required_columns = [
+            'user_id', 'timestamp', 'device_type', 'os_browser', 'screen_resolution',
+            'ip', 'lat', 'lon', 'city', 'login_method', 'channel'
+        ]
 
-    if input_method == "Manual Entry":
-        with st.form("manual_entry_form"):
-            user_id = st.text_input("User ID")
-            timestamp = st.text_input("Timestamp (e.g. 2025-06-18 14:30:00)")
-            device_type = st.text_input("Device Type")
-            os_browser = st.text_input("OS/Browser")
-            screen_resolution = st.text_input("Screen Resolution")
-            ip = st.text_input("IP Address")
-            lat = st.number_input("Latitude", format="%.6f")
-            lon = st.number_input("Longitude", format="%.6f")
-            city = st.text_input("City")
-            login_method = st.text_input("Login Method")
-            channel = st.text_input("Channel")
+        # Validate column structure
+        if set(required_columns) <= set(new_data.columns):
+            new_data = new_data[required_columns]
 
-            submitted = st.form_submit_button("Submit")
-            if submitted:
-                st.success("✅ Data Submitted")
-                st.json({
-                    "user_id": user_id,
-                    "timestamp": timestamp,
-                    "device_type": device_type,
-                    "os_browser": os_browser,
-                    "screen_resolution": screen_resolution,
-                    "ip": ip,
-                    "lat": lat,
-                    "lon": lon,
-                    "city": city,
-                    "login_method": login_method,
-                    "channel": channel
-                })
+            # Append to existing Excel
+            existing_df = pd.read_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx")
+            combined_df = pd.concat([existing_df, new_data], ignore_index=True)
 
-    elif input_method == "Upload CSV":
-        uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx", "csv"])
-        if uploaded_file:
-            df_uploaded = pd.read_excel(uploaded_file)
-            st.write("📄 Uploaded Data Preview:")
-            st.dataframe(df_uploaded)
-            expected_cols = ['user_id', 'timestamp', 'device_type', 'os_browser', 'screen_resolution', 'ip', 'lat',
-                             'lon', 'city', 'login_method', 'channel']
-            missing_cols = set(expected_cols) - set(df_uploaded.columns)
-            if missing_cols:
-                st.error(f"Missing columns in uploaded file: {missing_cols}")
-            else:
-                st.success("✅ File structure is valid.")
-                try:
-                    # Load existing data
-                    existing_df = pd.read_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx")
-                    # Append new data
-                    combined_df = pd.concat([existing_df, df_uploaded], ignore_index=True)
-                    # Save back to Excel
-                    combined_df.to_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx", index=False)
-                    st.success("📁 Data successfully appended to Excel file.")
-                except Exception as e:
-                    st.error(f"❌ Error saving to Excel: {e}")
+            # Save back
+            combined_df.to_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx", index=False)
+            st.success("✅ Data synced successfully!")
+
+            # Refresh the page
+            st.rerun()
+        else:
+            st.error(f"❌ Invalid file structure. Missing columns: {set(required_columns) - set(new_data.columns)}")
+    except Exception as e:
+        st.error(f"❌ Error syncing data: {e}")
