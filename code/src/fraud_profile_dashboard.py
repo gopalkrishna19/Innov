@@ -3,10 +3,10 @@ import pandas as pd
 import pydeck as pdk
 
 # Load all data
-login_df = pd.read_excel("src/code/synthetic_logs/synthetic_login_metadata.xlsx")
-session_df = pd.read_excel("src/code/synthetic_logs/session_metadata.xlsx")
-transaction_df = pd.read_excel("src/code/synthetic_logs/transaction_metadata.xlsx")
-feature_df = pd.read_excel("src/code/synthetic_logs/feature_usage_logs.xlsx")
+login_df = pd.read_excel("code/src/synthetic_logs/synthetic_login_metadata.xlsx")
+session_df = pd.read_excel("code/src/synthetic_logs/session_metadata.xlsx")
+transaction_df = pd.read_excel("code/src/synthetic_logs/transaction_metadata.xlsx")
+feature_df = pd.read_excel("code/src/synthetic_logs/feature_usage_logs.xlsx")
 
 # Preprocess timestamps
 login_df['timestamp'] = pd.to_datetime(login_df['timestamp'])
@@ -25,30 +25,41 @@ login_tab, session_tab, transaction_tab, feature_tab = st.tabs([
     "🔐 Login Profile", "🔄 Session Activity", "💳 Transactions", "🔧 Feature Usage"
 ])
 
-# Common user selector
-user_ids = login_df['user_id'].unique()
-user_id = st.sidebar.selectbox("Select User ID", user_ids)
-
 # --- LOGIN PROFILE TAB --- #
 with login_tab:
-    st.header(f"Login Behavior for {user_id}")
-    user_login = login_df[login_df['user_id'] == user_id]
+    st.sidebar.title("🛡️ Fraud Profile Dashboard")
+    user_id = st.sidebar.selectbox("Select a User", login_df['user_id'].unique())
 
+    user_df = login_df[login_df['user_id'] == user_id]
+
+    st.title(f"Fraud Profile for: {user_id}")
+
+    # Summary Panel
+    st.subheader("📌 User Summary")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Logins", len(user_login))
-    col2.metric("Most Used Device", user_login['device_type'].mode()[0])
-    col3.metric("Top Login Hour", user_login['login_hour'].mode()[0])
+    col1.metric("Total Logins", len(user_df))
+    col2.metric("Most Used Device", user_df['device_type'].mode()[0])
+    col3.metric("Preferred Channel", user_df['channel'].mode()[0])
 
-    st.subheader("Login Hour Distribution")
-    st.bar_chart(user_login['login_hour'].value_counts().sort_index())
+    col4, col5, col6 = st.columns(3)
+    col4.metric("Most Used Login Method", user_df['login_method'].mode()[0])
+    col5.metric("Top City", user_df['city'].mode()[0])
+    col6.metric("Common OS/Browser", user_df['os_browser'].mode()[0])
 
-    st.subheader("Login Map")
-    map_data = user_login[['lat', 'lon']].drop_duplicates()
+    # Login Time Histogram
+    st.subheader("⏰ Login Hours Distribution")
+    hour_counts = user_df['login_hour'].value_counts().sort_index()
+    st.bar_chart(hour_counts)
+
+    # Geolocation Map
+    st.subheader("🗺️ Login Location Map")
+    map_data = user_df[['lat', 'lon']].drop_duplicates()
     st.pydeck_chart(pdk.Deck(
         initial_view_state=pdk.ViewState(
             latitude=map_data['lat'].mean(),
             longitude=map_data['lon'].mean(),
             zoom=4,
+            pitch=0,
         ),
         layers=[
             pdk.Layer(
@@ -60,7 +71,26 @@ with login_tab:
             )
         ]
     ))
-    st.dataframe(user_login)
+
+    # Device / Channel / Login Method Breakdown
+    st.subheader("📊 Behavior Breakdown")
+    col7, col8, col9 = st.columns(3)
+
+    with col7:
+        st.markdown("**Device Type**")
+        st.bar_chart(user_df['device_type'].value_counts())
+
+    with col8:
+        st.markdown("**Login Methods**")
+        st.bar_chart(user_df['login_method'].value_counts())
+
+    with col9:
+        st.markdown("**Channels**")
+        st.bar_chart(user_df['channel'].value_counts())
+
+    # Raw data toggle
+    with st.expander("📄 Show Raw Login Data"):
+        st.dataframe(user_df)
 
 # --- SESSION ACTIVITY TAB --- #
 with session_tab:

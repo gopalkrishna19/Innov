@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pydeck as pdk
 
 # Load data
-df = pd.read_excel("src/code/synthetic_login_metadata.xlsx")
+df = pd.read_excel("code/src/synthetic_login_metadata.xlsx")
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df['login_hour'] = df['timestamp'].dt.hour
 
@@ -74,20 +74,4 @@ with col9:
 # Raw data toggle
 with st.expander("📄 Show Raw Login Data"):
     st.dataframe(user_df)
-
-# Optional: Compare 2 users
-with st.expander("🆚 Compare with Another User"):
-    other_user = st.selectbox("Compare with user:", [u for u in df['user_id'].unique() if u != user_id])
-    other_df = df[df['user_id'] == other_user]
-
-    st.markdown(f"**Comparison: {user_id} vs {other_user}**")
-
-    comp_df = pd.DataFrame({
-        "Login Count": [len(user_df), len(other_df)],
-        "Device Type": [user_df['device_type'].mode()[0], other_df['device_type'].mode()[0]],
-        "Top Login Hour": [user_df['login_hour'].mode()[0], other_df['login_hour'].mode()[0]],
-        "Top Channel": [user_df['channel'].mode()[0], other_df['channel'].mode()[0]]
-    }, index=[user_id, other_user])
-
-    st.dataframe(comp_df)
 

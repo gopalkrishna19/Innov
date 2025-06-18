@@ -4,7 +4,7 @@ import seaborn as sns
 import os
 
 # Load the synthetic login metadata
-df = pd.read_excel("src/code/synthetic_login_metadata.xlsx")
+df = pd.read_excel("code/src/synthetic_login_metadata.xlsx")
 
 # Convert timestamp to datetime
 df['timestamp'] = pd.to_datetime(df['timestamp'])

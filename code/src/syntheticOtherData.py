@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 
 # Load existing user_ids from previous login data
-login_df = pd.read_excel("src/code/synthetic_login_metadata.xlsx")
+login_df = pd.read_excel("code/src/synthetic_login_metadata.xlsx")
 user_ids = login_df["user_id"].unique()
 
 # Constants
