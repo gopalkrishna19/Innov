@@ -3,7 +3,7 @@ import pandas as pd
 import pydeck as pdk
 
 # Load all data
-login_df = pd.read_excel("src/code/synthetic_login_metadata.xlsx")
+login_df = pd.read_excel("src/code/synthetic_logs/synthetic_login_metadata.xlsx")
 session_df = pd.read_excel("src/code/synthetic_logs/session_metadata.xlsx")
 transaction_df = pd.read_excel("src/code/synthetic_logs/transaction_metadata.xlsx")
 feature_df = pd.read_excel("src/code/synthetic_logs/feature_usage_logs.xlsx")
